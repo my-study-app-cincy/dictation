@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FBF6EE">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="받아쓰기">
+  <title>받아쓰기 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 아이콘 (Lucide 스타일) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path class="solid" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect class="solid" x="5.5" y="4" width="4.5" height="16" rx="1.5"/><rect class="solid" x="14" y="4" width="4.5" height="16" rx="1.5"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path class="solid" d="M18 5v14a1 1 0 0 1-1.6.8L7.5 13.2a1.5 1.5 0 0 1 0-2.4l8.9-6.6A1 1 0 0 1 18 5z"/><path d="M5 5v14"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path class="solid" d="M6 5v14a1 1 0 0 0 1.6.8l8.9-6.6a1.5 1.5 0 0 0 0-2.4L7.6 4.2A1 1 0 0 0 6 5z"/><path d="M19 5v14"/></symbol>
+    <symbol id="i-replay" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M4 5v14"/><path d="m20 5-9 7 9 7z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M10 13h4M7 16h10"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  </svg>
+
+  <header class="appbar">
+    <div class="brand">
+      <span class="logo"><svg class="ic"><use href="#i-pencil"/></svg></span>
+      <div>
+        <h1>받아쓰기 도우미</h1>
+        <p>찍고 · 듣고 · 채점까지</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================== 문제 만들기 ===================== -->
+    <section id="tab-make" class="panel active">
+      <div class="card">
+        <div class="step"><span>1</span>급수표 찍기</div>
+        <label class="dropzone">
+          <span class="dz-icon"><svg class="ic"><use href="#i-camera"/></svg></span>
+          <b>급수표 사진 찍기 · 고르기</b>
+          <small>한 장에 여러 회(급)가 있어도 나눠서 찾아요</small>
+          <input type="file" id="sheetFile" accept="image/*" hidden>
+        </label>
+        <div id="sheetStatus" class="status"></div>
+        <div id="foundSets" class="chips"></div>
+      </div>
+
+      <div class="card">
+        <div class="step"><span>2</span><em id="editorTitle">확인하고 저장하기</em></div>
+        <p class="hint">선생님 동그라미가 있던 글자, 띄어쓰기는 한 번 더 확인해 주세요.</p>
+        <label class="field">
+          <span class="field-label">제목</span>
+          <input type="text" id="setTitle" placeholder="예: 5회">
+        </label>
+        <label class="field">
+          <span class="field-label">문장 <small id="lineCount"></small></span>
+          <textarea id="setSentences" rows="10" placeholder="한 줄에 한 문장씩 적어 주세요&#10;예) 아버지가 방에 들어가신다."></textarea>
+        </label>
+        <div class="row">
+          <button class="btn ghost" id="newSet"><svg class="ic"><use href="#i-plus"/></svg>새로 쓰기</button>
+          <button class="btn primary grow" id="saveSet"><svg class="ic"><use href="#i-save"/></svg>저장하기</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">저장된 받아쓰기 <span class="count" id="setCount"></span></div>
+        <ul id="setList" class="set-list"></ul>
+      </div>
+    </section>
+
+    <!-- ===================== 받아쓰기 ===================== -->
+    <section id="tab-dictate" class="panel">
+      <div class="card compact">
+        <div class="picker-head"><span>회차 고르기</span><small>채점하면 ✓ 표시가 붙어요</small></div>
+        <div class="round-picker" data-for="dictSet"></div>
+        <select id="dictSet" hidden></select>
+        <details class="settings-box">
+          <summary>
+            <svg class="ic"><use href="#i-gear"/></svg>
+            <span id="settingsSummary">설정</span>
+            <svg class="ic chev"><use href="#i-chevron"/></svg>
+          </summary>
+          <div class="settings">
+            <label>말 빠르기
+              <select id="rate"><option value="-30">천천히</option><option value="-20" selected>조금 천천히</option><option value="-10">보통</option></select>
+            </label>
+            <label>띄어 읽기 쉼
+              <select id="gap"><option value="0">짧게</option><option value="0.4" selected>보통</option><option value="0.8">길게</option></select>
+            </label>
+            <label>문장 반복
+              <select id="repeat"><option value="1">1번</option><option value="2" selected>2번</option><option value="3">3번</option></select>
+            </label>
+            <label>쓰는 시간
+              <select id="writeTime"><option value="0.7">짧게</option><option value="1" selected>보통</option><option value="1.5">길게</option><option value="2.2">아주 길게</option></select>
+            </label>
+          </div>
+          <p class="hint" id="voiceInfo"></p>
+        </details>
+      </div>
+
+      <div class="card stage idle" id="stage">
+        <div class="pill" id="playerStatus">시작을 누르면 불러 줄게요</div>
+
+        <div class="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="ring-num"><span id="curNum">-</span><small>/ <span id="totalNum">-</span></small></div>
+        </div>
+
+        <div class="dots" id="dots"></div>
+
+        <div class="manuscript hidden-text" id="curText"></div>
+        <label class="switch">
+          <input type="checkbox" id="showText">
+          <span>문장 보기 <small>(부모용)</small></span>
+        </label>
+
+        <div class="transport">
+          <button class="round" id="prevBtn" aria-label="이전 문제"><svg class="ic"><use href="#i-prev"/></svg></button>
+          <button class="round big" id="startBtn" aria-label="시작"><svg class="ic"><use href="#i-play"/></svg></button>
+          <button class="round" id="nextBtn" aria-label="다음 문제"><svg class="ic"><use href="#i-next"/></svg></button>
+        </div>
+        <div class="subctrl">
+          <button id="replayBtn"><svg class="ic"><use href="#i-replay"/></svg>다시 듣기</button>
+          <button id="restartBtn"><svg class="ic"><use href="#i-restart"/></svg>처음부터</button>
+          <button id="stopBtn"><svg class="ic"><use href="#i-stop"/></svg>그만</button>
+        </div>
+
+        <button class="btn primary block hidden" id="goGrade"><svg class="ic"><use href="#i-check"/></svg>채점하러 가기</button>
+      </div>
+    </section>
+
+    <!-- ===================== 채점 ===================== -->
+    <section id="tab-grade" class="panel">
+      <div class="card">
+        <div class="picker-head"><span>채점할 회차</span></div>
+        <div class="round-picker" data-for="gradeSet"></div>
+        <select id="gradeSet" hidden></select>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" id="chkSpacing"><span>띄어쓰기도 채점</span></label>
+          <label class="switch"><input type="checkbox" id="chkPunct"><span>문장부호도 채점</span></label>
+        </div>
+        <div class="tiles">
+          <label class="tile primary server-only">
+            <svg class="ic"><use href="#i-camera"/></svg>
+            <b>답안지 사진</b>
+            <small>찍으면 자동 채점</small>
+            <input type="file" id="answerFile" accept="image/*" hidden>
+          </label>
+          <button class="tile static-primary" id="manualGrade">
+            <svg class="ic"><use href="#i-keyboard"/></svg>
+            <b>직접 입력</b>
+            <small>사진 없이 채점</small>
+          </button>
+        </div>
+        <button class="link-btn" id="printSheet"><svg class="ic"><use href="#i-print"/></svg>번호 칸 답안지 인쇄하기 <small>(더 잘 읽어요)</small></button>
+        <div id="gradeStatus" class="status"></div>
+      </div>
+
+      <div id="scoreBox" class="card score-card hidden">
+        <div class="stamp"><span id="scoreVal">0</span><small>점</small></div>
+        <div class="score-text">
+          <b id="scoreMsg"></b>
+          <span id="scoreSub"></span>
+        </div>
+      </div>
+      <div id="gradeItems"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active server-only" data-tab="make"><svg class="ic"><use href="#i-camera"/></svg><span>문제 만들기</span></button>
+    <button class="tab" data-tab="dictate"><svg class="ic"><use href="#i-volume"/></svg><span>받아쓰기</span></button>
+    <button class="tab" data-tab="grade"><svg class="ic"><use href="#i-check"/></svg><span>채점</span></button>
+  </nav>
+
+  <script src="config.js"></script>
+  <script src="grading.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

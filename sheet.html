@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>받아쓰기 답안지</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; color: #000; background: #fff; margin: 0; padding: 16px; }
+    .top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8mm; }
+    h1 { font-family: "Jua", "Malgun Gothic", sans-serif; font-weight: 400; font-size: 24pt; margin: 0; }
+    h1::before { content: "✏️ "; }
+    .name { font-size: 13pt; }
+    .name span { display: inline-block; width: 38mm; border-bottom: 1px solid #000; }
+    .rows { border-top: 2px solid #000; }
+    .row { display: flex; align-items: center; height: 19mm; border-bottom: 1.5px solid #000; }
+    .no { width: 14mm; font-family: "Jua", "Malgun Gothic", sans-serif; font-size: 20pt; text-align: center; border-right: 1px solid #999; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .tip { color: #666; font-size: 10pt; margin-top: 6mm; }
+    .print { margin: 12px 0; padding: 10px 20px; font-size: 16px; }
+    @media print { .print { display: none; } body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <button class="print" onclick="print()">🖨 인쇄하기</button>
+  <div class="top">
+    <h1 id="title">받아쓰기</h1>
+    <div class="name">이름 <span></span></div>
+  </div>
+  <div class="rows" id="rows"></div>
+  <p class="tip">번호 칸 오른쪽에 한 줄에 한 문장씩, 또박또박 크게 써요.</p>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const n = Math.min(30, Math.max(1, +q.get("n") || 10));
+    if (q.get("title")) document.getElementById("title").textContent = q.get("title");
+    document.getElementById("rows").innerHTML = Array.from({ length: n }, (_, i) =>
+      `<div class="row"><div class="no">${i + 1}</div></div>`).join("");
+  </script>
+</body>
+</html>
