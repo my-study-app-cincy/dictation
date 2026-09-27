@@ -86,7 +86,7 @@ async def sync(root: Path) -> None:
     for f in out.iterdir():
         if f.name != "index.json" and f.name not in used:
             f.unlink()
-    index_path.write_text(json.dumps(index, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    index_path.write_text(json.dumps(index, ensure_ascii=False, sort_keys=True), encoding="utf-8", newline="\n")
     write_service_worker(root)
 
 
@@ -146,6 +146,7 @@ self.addEventListener("fetch", (e) => {{
 }});
 """,
         encoding="utf-8",
+        newline="\n",  # PC(Windows)와 GitHub(리눅스)에서 똑같은 파일이 되게
     )
     print(f"서비스 워커 버전 {version}, 파일 {len(files)}개")
 
