@@ -67,10 +67,16 @@
       <div class="card">
         <div class="step"><span>2</span><em id="editorTitle">확인하고 저장하기</em></div>
         <p class="hint">선생님 동그라미가 있던 글자, 띄어쓰기는 한 번 더 확인해 주세요.</p>
-        <label class="field">
-          <span class="field-label">제목</span>
-          <input type="text" id="setTitle" placeholder="예: 5회">
-        </label>
+        <div class="row">
+          <label class="field grow">
+            <span class="field-label">제목</span>
+            <input type="text" id="setTitle" placeholder="예: 5회">
+          </label>
+          <label class="field">
+            <span class="field-label">종류</span>
+            <select id="setLang"><option value="ko">국어</option><option value="en">영어 단어</option></select>
+          </label>
+        </div>
         <label class="field">
           <span class="field-label">문장 <small id="lineCount"></small></span>
           <textarea id="setSentences" rows="10" placeholder="한 줄에 한 문장씩 적어 주세요&#10;예) 아버지가 방에 들어가신다."></textarea>

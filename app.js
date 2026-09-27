@@ -40,10 +40,13 @@ async function fetchSets() {
 }
 
 let audioIndex = null;
-async function speechMeta(text, rate, spaced) {
-  if (!STATIC) return api(`/api/speech?text=${encodeURIComponent(text)}&rate=${rate}&spaced=${spaced}`);
+// 휴대폰 모드 음성 목록의 키 (scripts/build_mobile.py 와 같아야 한다)
+const audioKey = (text, rate, spaced, lang) => `${lang === "en" ? "en|" : ""}${rate}|${spaced}|${text}`;
+
+async function speechMeta(text, rate, spaced, lang) {
+  if (!STATIC) return api(`/api/speech?text=${encodeURIComponent(text)}&rate=${rate}&spaced=${spaced}&lang=${lang}`);
   audioIndex ||= fetch("audio/index.json").then((r) => r.json());
-  const meta = (await audioIndex)[`${rate}|${spaced}|${text}`];
+  const meta = (await audioIndex)[audioKey(text, rate, spaced, lang)];
   if (!meta) throw new Error("준비된 음성이 없어요");
   return meta;
 }
@@ -85,16 +88,28 @@ const findSet = (id) => sets.find((s) => s.id === id);
 // ---------- 회차 고르기 ----------
 const roundLabel = (s) => s.title.split(" · ")[0];
 
+const LANG_NAMES = { ko: "국어", en: "영어" };
+const langOf = (s) => s?.lang || "ko";
+
 function renderPickers() {
+  const langs = [...new Set(sets.map(langOf))];
   document.querySelectorAll(".round-picker").forEach((box) => {
     const sel = $(`#${box.dataset.for}`);
     const cur = findSet(sel.value);
+    const lang = langOf(cur);
+    // 국어·영어가 둘 다 있으면 위에 전환 버튼을 두고, 고른 언어의 회차만 보여 준다
+    const switcher = langs.length > 1
+      ? `<div class="lang-switch" style="grid-column:1/-1">${langs
+          .map((l) => `<button class="${l === lang ? "active" : ""}" data-lang="${l}">${LANG_NAMES[l]}</button>`)
+          .join("")}</div>`
+      : "";
     box.innerHTML = sets.length
-      ? sets
+      ? switcher + sets
+          .filter((s) => langOf(s) === lang)
           .map((s) => {
             const status = s.score != null ? `✓ ${s.score}점` : s.done ? "✓ 완료" : "";
             return `<button class="rp ${s.done ? "done" : ""} ${s.id === sel.value ? "active" : ""}" data-id="${s.id}">
-              <b>${esc(roundLabel(s))}</b><small>${status}</small></button>`;
+              <b class="${roundLabel(s).length > 4 ? "long" : ""}">${esc(roundLabel(s))}</b><small>${status}</small></button>`;
           })
           .join("") + (cur ? `<div class="picker-unit" style="grid-column:1/-1">${esc(cur.title)}</div>` : "")
       : `<div class="empty" style="grid-column:1/-1">먼저 문제 만들기에서 저장해 주세요</div>`;
@@ -103,9 +118,16 @@ function renderPickers() {
 
 document.querySelectorAll(".round-picker").forEach((box) => {
   box.onclick = (e) => {
+    const sel = $(`#${box.dataset.for}`);
+    const sw = e.target.closest(".lang-switch button");
+    if (sw) {
+      const same = sets.filter((s) => langOf(s) === sw.dataset.lang);
+      sel.value = (same.find((s) => !s.done) || same[0]).id;
+      sel.dispatchEvent(new Event("change"));
+      return;
+    }
     const b = e.target.closest(".rp");
     if (!b) return;
-    const sel = $(`#${box.dataset.for}`);
     sel.value = b.dataset.id;
     sel.dispatchEvent(new Event("change"));
   };
@@ -122,7 +144,7 @@ function renderSetList() {
     .map(
       (s) => `<li class="set-item" data-id="${s.id}">
         <div class="set-main">
-          <div class="set-title">${esc(s.title)}<small>${s.sentences.length}문장</small></div>
+          <div class="set-title">${esc(s.title)}${langOf(s) === "en" ? `<span class="tag-en">영어</span>` : ""}<small>${s.sentences.length}${langOf(s) === "en" ? "단어" : "문장"}</small></div>
           <div class="set-preview">${esc(s.sentences[0] || "")}</div>
         </div>
         <div class="set-actions">
@@ -146,7 +168,7 @@ $("#setList").onclick = async (e) => {
     player.load();
     showTab("dictate");
   } else if (btn.dataset.act === "edit") {
-    fillEditor(s.title, s.sentences, s.id);
+    fillEditor(s.title, s.sentences, s.id, langOf(s), s.meanings);
     $("#setTitle").scrollIntoView({ behavior: "smooth", block: "center" });
   } else if (btn.dataset.act === "del" && confirm(`'${s.title}'을(를) 지울까요?`)) {
     await api(`/api/sets/${s.id}`, { method: "DELETE" });
@@ -155,10 +177,12 @@ $("#setList").onclick = async (e) => {
   }
 };
 
-function fillEditor(title, sentences, id) {
+// 영어 단어는 한 줄에 "look = 보다" 처럼 뜻을 같이 적을 수 있다(뜻은 채점 화면에만 보인다)
+function fillEditor(title, sentences, id, lang = "ko", meanings = []) {
   editingId = id;
   $("#setTitle").value = title;
-  $("#setSentences").value = sentences.join("\n");
+  $("#setLang").value = lang;
+  $("#setSentences").value = sentences.map((s, i) => (meanings?.[i] ? `${s} = ${meanings[i]}` : s)).join("\n");
   $("#editorTitle").textContent = id ? "수정하기" : "확인하고 저장하기";
   updateLineCount();
 }
@@ -178,11 +202,14 @@ $("#newSet").onclick = () => {
 
 $("#saveSet").onclick = async () => {
   const title = $("#setTitle").value.trim() || "새 받아쓰기";
-  const sentences = $("#setSentences").value.split("\n").map((l) => l.trim()).filter(Boolean);
-  if (!sentences.length) return alert("문장을 한 개 이상 넣어 주세요.");
+  const lines = $("#setSentences").value.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return alert("문장을 한 개 이상 넣어 주세요.");
+  const lang = $("#setLang").value;
+  const pairs = lines.map((l) => (lang === "en" ? l.split(/\s*=\s*/) : [l]));
+  const body = { title, lang, sentences: pairs.map((p) => p[0]), meanings: pairs.map((p) => p[1] || "") };
   const saved = editingId
-    ? await postJSON(`/api/sets/${editingId}`, { title, sentences }, "PUT")
-    : await postJSON("/api/sets", { title, sentences });
+    ? await postJSON(`/api/sets/${editingId}`, body, "PUT")
+    : await postJSON("/api/sets", body);
   editingId = saved.id;
   $("#editorTitle").textContent = "수정하기";
   await loadSets();
@@ -254,12 +281,12 @@ const voice = {
     return this.ctx;
   },
 
-  load(text, spaced) {
+  load(text, spaced, lang = "ko") {
     const rate = +$("#rate").value;
-    const key = `${rate}|${spaced}|${text}`;
+    const key = audioKey(text, rate, spaced, lang);
     if (!this.clips.has(key)) {
       const p = (async () => {
-        const meta = await speechMeta(text, rate, spaced);
+        const meta = await speechMeta(text, rate, spaced, lang);
         const data = await (await fetch(meta.url)).arrayBuffer();
         return { buf: await this.context().decodeAudioData(data), cuts: meta.cuts };
       })();
@@ -320,6 +347,7 @@ const player = {
   mode: "idle",
   modeText: IDLE_TEXT,
   sentences: [],
+  lang: "ko",
 
   check(gen) {
     if (gen !== this.gen) throw new Aborted();
@@ -329,6 +357,7 @@ const player = {
   load() {
     const s = findSet($("#dictSet").value);
     this.sentences = s ? s.sentences : [];
+    this.lang = s?.lang || "ko";
     this.idx = 0;
     this.finished = false;
     this.render();
@@ -347,12 +376,12 @@ const player = {
     ring.classList.toggle("zero", p === 0); // 0%일 때 둥근 끝이 점으로 보이지 않게
   },
 
-  // spaced: 띄어쓰기마다 쉬면서 읽기(받아쓰기 문장용)
-  async say(text, gen, spaced = false) {
+  // spaced: 띄어쓰기마다 쉬면서 읽기(국어 받아쓰기 문장용), lang: 목소리 언어
+  async say(text, gen, spaced = false, lang = "ko") {
     this.check(gen);
     let clip;
     try {
-      clip = await voice.load(text, spaced);
+      clip = await voice.load(text, spaced, lang);
     } catch {
       throw new Error("음성을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
     }
@@ -382,7 +411,12 @@ const player = {
       .join("");
     const s = this.sentences[this.idx];
     const box = $("#curText");
-    if (s) {
+    box.classList.toggle("en", this.lang === "en");
+    if (s && this.lang === "en") {
+      // 영어는 원고지 대신 영어 공책(4줄) 위에 쓴다
+      box.style.setProperty("--cols", 1);
+      box.innerHTML = `<span class="en-word">${esc(s)}</span>`;
+    } else if (s) {
       const chars = [...s];
       const cols = Math.min(10, chars.length);
       while (chars.length % cols) chars.push(null); // 마지막 줄은 빈칸으로 채운다
@@ -402,12 +436,13 @@ const player = {
 
   prefetch() {
     // 음성을 미리 만들어 두어서 문장 사이에 끊김이 없게 한다.
-    const jobs = [["받아쓰기를 시작할게요.", false]];
-    this.sentences.forEach((s, i) => jobs.push([`${i + 1}번.`, false], [s, true]));
-    jobs.push(["받아쓰기 끝. 정말 수고했어요!", false]);
+    const ko = this.lang === "ko";
+    const jobs = [["받아쓰기를 시작할게요.", false, "ko"]];
+    this.sentences.forEach((s, i) => jobs.push([`${i + 1}번.`, false, "ko"], [s, ko, this.lang]));
+    jobs.push(["받아쓰기 끝. 정말 수고했어요!", false, "ko"]);
     (async () => {
-      for (const [t, spaced] of jobs) {
-        try { await voice.load(t, spaced); } catch {}
+      for (const [t, spaced, lang] of jobs) {
+        try { await voice.load(t, spaced, lang); } catch {}
       }
     })();
   },
@@ -438,12 +473,14 @@ const player = {
         await this.say(`${this.idx + 1}번.`, gen);
         await this.wait(600, gen);
         for (let r = 0; r < repeat; r++) {
-          await this.say(s, gen, true);
+          await this.say(s, gen, this.lang === "ko", this.lang);
           if (r < repeat - 1) await this.wait(1800, gen);
         }
         this.setMode("writing", "이제 써 보세요 ✏️");
-        // 2학년 기준 한 글자에 1초 정도 + 여유 4초
-        const ms = (4000 + 1000 * s.replace(/\s/g, "").length) * +$("#writeTime").value;
+        // 2학년 기준 한글은 한 글자에 1초, 영어 철자는 한 글자에 1.2초 정도 + 여유
+        const letters = s.replace(/\s/g, "").length;
+        const base = this.lang === "en" ? 3000 + 1200 * letters : 4000 + 1000 * letters;
+        const ms = base * +$("#writeTime").value;
         await this.wait(ms, gen, (p) => this.setRing(p));
       }
       this.idx = this.sentences.length - 1;
@@ -614,7 +651,8 @@ function buildGradeCards() {
     const card = document.createElement("div");
     card.className = "card item";
     card.innerHTML = `
-      <div class="item-head"><span class="mark">${i + 1}</span><span class="badge"></span></div>
+      <div class="item-head"><span class="mark">${i + 1}</span><span class="badge"></span>${
+        set.meanings?.[i] ? `<span class="meaning">뜻: ${esc(set.meanings[i])}</span>` : ""}</div>
       <div class="crop-slot"></div>
       <span class="field-label">아이가 쓴 글 <small>${image ? "읽은 결과 · 다르면 고쳐 주세요" : ""}</small></span>
       <input type="text" value="${esc(gradeState.written[i])}" ${lowconf ? 'class="lowconf"' : ""} placeholder="아이가 쓴 그대로">
@@ -660,7 +698,8 @@ function scoreMessage(score) {
 }
 
 async function regrade() {
-  const res = Grading.grade(gradeState.set.sentences, gradeState.written, $("#chkSpacing").checked, $("#chkPunct").checked);
+  const res = Grading.grade(
+    gradeState.set.sentences, gradeState.written, $("#chkSpacing").checked, $("#chkPunct").checked, gradeState.set.lang || "ko");
   const box = $("#scoreBox");
   const wasHidden = box.classList.contains("hidden");
   box.classList.remove("hidden");

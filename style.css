@@ -241,12 +241,35 @@ select {
   transition: all 0.15s;
 }
 .rp b { font-family: var(--display); font-weight: 400; font-size: 19px; line-height: 1.1; }
+.rp b.long { font-size: 15px; padding-top: 3px; white-space: nowrap; } /* "Unit 05" 처럼 긴 이름 */
 .rp small { font-size: 11px; font-weight: 700; color: var(--ink-3); min-height: 14px; }
 .rp.done { background: var(--surface-2); border-color: transparent; }
 .rp.done b { color: var(--ink-2); }
 .rp.done small { color: var(--ok); }
 .rp.active { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 6px 14px rgba(255, 122, 69, 0.3); }
 .rp.active b, .rp.active small { color: #fff; }
+.lang-switch { display: flex; background: var(--surface-2); border-radius: 14px; padding: 4px; margin-bottom: 4px; }
+.lang-switch button {
+  flex: 1; border: 0; background: none; border-radius: 10px; padding: 8px 0;
+  font-weight: 700; font-size: 15px; color: var(--ink-2);
+}
+.lang-switch button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(60, 40, 20, 0.12); }
+
+/* 영어 단어: 영어 공책 4줄 위에 */
+.manuscript.en { display: block; max-width: 420px; }
+.en-word {
+  display: block; padding: 0 14px; height: 76px; line-height: 70px; text-align: center;
+  font-family: "Pretendard Variable", system-ui, sans-serif; font-size: 40px; font-weight: 600; letter-spacing: 1px;
+  border-radius: 12px; background-color: #fffaf6;
+  /* 윗줄 · 가운데 점선 · 기준선(굵게) · 아랫줄 */
+  background-image: linear-gradient(#f0c9b3, #f0c9b3), linear-gradient(90deg, #f0c9b3 50%, transparent 0),
+    linear-gradient(#e8a888, #e8a888), linear-gradient(#f0c9b3, #f0c9b3);
+  background-size: 100% 1px, 8px 1px, 100% 2px, 100% 1px;
+  background-repeat: no-repeat, repeat-x, no-repeat, no-repeat;
+  background-position: 0 10px, 0 29px, 0 48px, 0 66px;
+}
+.manuscript.hidden-text .en-word { color: transparent; text-shadow: 0 0 12px rgba(60, 40, 20, 0.45); user-select: none; }
+.tag-en { font-family: var(--body); font-size: 11.5px; font-weight: 700; color: var(--sky); background: var(--sky-soft); padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 2px; }
 .picker-unit { margin-top: 10px; font-size: 14px; color: var(--ink-2); font-weight: 600; }
 .settings-box { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
 .settings-box summary {
@@ -395,6 +418,7 @@ select {
 .item.bad .mark::after {
   left: 50%; top: -4px; width: 3px; height: 46px; background: var(--red); border-radius: 2px; transform: rotate(35deg);
 }
+.meaning { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--ink-2); background: var(--surface-2); padding: 3px 10px; border-radius: 999px; }
 .badge { padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 13px; }
 .badge.ok { background: var(--ok-soft); color: var(--ok); }
 .badge.bad { background: var(--red-soft); color: var(--red); }

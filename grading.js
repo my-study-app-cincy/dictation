@@ -5,8 +5,9 @@
 
   const PUNCT = /[^\p{L}\p{N}\p{M}_\s]/gu;
 
-  function normalize(s, keepPunct) {
+  function normalize(s, keepPunct, lang) {
     s = s.normalize("NFC");
+    if (lang === "en") s = s.toLowerCase(); // 영어는 대소문자를 따지지 않는다
     if (!keepPunct) s = s.replace(PUNCT, "");
     return s.replace(/\s+/g, " ").trim();
   }
@@ -53,9 +54,9 @@
     return out;
   }
 
-  function gradeItem(expected, written, checkSpacing = false, checkPunct = false) {
-    const e = normalize(expected, checkPunct);
-    const w = normalize(written, checkPunct);
+  function gradeItem(expected, written, checkSpacing = false, checkPunct = false, lang = "ko") {
+    const e = normalize(expected, checkPunct, lang);
+    const w = normalize(written, checkPunct, lang);
     const ec = [...e.replace(/ /g, "")];
     const wc = [...w.replace(/ /g, "")];
 
@@ -87,8 +88,8 @@
     };
   }
 
-  function grade(expected, written, checkSpacing = false, checkPunct = false) {
-    const items = expected.map((e, i) => gradeItem(e, written[i] || "", checkSpacing, checkPunct));
+  function grade(expected, written, checkSpacing = false, checkPunct = false, lang = "ko") {
+    const items = expected.map((e, i) => gradeItem(e, written[i] || "", checkSpacing, checkPunct, lang));
     const correct = items.filter((it) => it.correct).length;
     const total = items.length;
     return { items, correct, total, score: total ? Math.round((100 * correct) / total) : 0 };
