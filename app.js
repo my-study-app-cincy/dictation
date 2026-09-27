@@ -302,26 +302,38 @@ const voice = {
   },
 
   // clip을 재생하면서 cuts 자리마다 gap초 쉼을 더 넣는다. 끝나거나 stop()되면 resolve.
+  // cuts: 쉼 자리(초) 목록, 또는 국어 띄어 읽기면 단어 사이 조용한 구간 [끝, 시작] 목록.
+  // 조용한 구간은 앞뒤를 조금만 남기고 잘라 낸 뒤 gap초를 쉰다(원래 1초쯤이라 그대로 두면 너무 길다).
   play({ buf, cuts }, gap = 0) {
     const ctx = this.context();
-    const bounds = [0, ...cuts.filter((c) => c > 0 && c < buf.duration), buf.duration];
+    const TAIL = 0.06, LEAD = 0.04;
+    const parts = [];
+    let from = 0;
+    for (const c of cuts) {
+      let [end, next] = Array.isArray(c) ? [c[0] + TAIL, c[1] - LEAD] : [c, c];
+      if (end > next) end = next = (end + next) / 2;
+      if (end <= from || next >= buf.duration) continue;
+      parts.push([from, end]);
+      from = next;
+    }
+    parts.push([from, buf.duration]);
     return new Promise((resolve) => {
       const entry = { sources: [], resolve };
       let t = ctx.currentTime + 0.05;
-      for (let i = 0; i < bounds.length - 1; i++) {
+      parts.forEach(([a, b], i) => {
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        const dur = bounds[i + 1] - bounds[i];
-        // 쉼을 넣는 자리는 소리를 살짝 줄였다 키워서 뚝 끊기지 않게 한다
+        const dur = b - a;
+        // 잘라 붙이는 자리는 소리를 살짝 줄였다 키워서 뚝 끊기지 않게 한다
         const g = ctx.createGain();
-        const fade = gap > 0 ? Math.min(0.01, dur / 4) : 0;
-        if (fade && i > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + fade); }
-        if (fade && i < bounds.length - 2) { g.gain.setValueAtTime(1, t + dur - fade); g.gain.linearRampToValueAtTime(0, t + dur); }
+        const fade = Math.min(0.01, dur / 4);
+        if (i > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + fade); }
+        if (i < parts.length - 1) { g.gain.setValueAtTime(1, t + dur - fade); g.gain.linearRampToValueAtTime(0, t + dur); }
         src.connect(g).connect(ctx.destination);
-        src.start(t, bounds[i], dur);
+        src.start(t, a, dur);
         t += dur + gap;
         entry.sources.push(src);
-      }
+      });
       entry.sources[entry.sources.length - 1].onended = () => this.finish(entry);
       this.playing.push(entry);
     });
