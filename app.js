@@ -207,15 +207,39 @@ $("#saveSet").onclick = async () => {
   const lang = $("#setLang").value;
   const pairs = lines.map((l) => (lang === "en" ? l.split(/\s*=\s*/) : [l]));
   const body = { title, lang, sentences: pairs.map((p) => p[0]), meanings: pairs.map((p) => p[1] || "") };
+  body.id = editingId;
   const saved = editingId
     ? await postJSON(`/api/sets/${editingId}`, body, "PUT")
     : await postJSON("/api/sets", body);
+  const split = lang === "en" && !body.id && body.sentences.filter(Boolean).length > 5;
   editingId = saved.id;
   $("#editorTitle").textContent = "수정하기";
   await loadSets();
   markFoundSaved(title);
-  setStatus($("#sheetStatus"), `'${title}' 저장했어요. 받아쓰기 탭에서 불러 줄 수 있어요.`, "ok");
+  if (split) fillEditor("", [], null, "en"); // 나눠 저장했으니 편집 중인 내용은 비운다
+  setStatus($("#sheetStatus"), split
+    ? `'${title}'을 5개씩 나눠 저장했어요. 다 만들었으면 아래 '아이 폰에 보내기'를 눌러 주세요.`
+    : `'${title}' 저장했어요. 다 만들었으면 아래 '아이 폰에 보내기'를 눌러 주세요.`, "ok");
 };
+
+// ---------- 아이 폰에 보내기 ----------
+async function watchPublish(st) {
+  const box = $("#publishStatus"), btn = $("#publishBtn");
+  btn.disabled = true;
+  while (st.running) {
+    setStatus(box, `보내는 중… ${st.log.at(-1) || "GitHub 목록 가져오는 중"}`, "loading");
+    await sleep(1500);
+    st = await api("/api/publish");
+  }
+  btn.disabled = false;
+  if (st.ok) setStatus(box, "보냈어요! 1~2분 뒤 아이 폰에서 앱을 열면 새 목록이 보여요.", "ok");
+  else if (st.ok === false) setStatus(box, `보내지 못했어요: ${st.log.slice(-3).join(" / ")}`, "error");
+  await loadSets();
+}
+if (!STATIC) {
+  $("#publishBtn").onclick = async () => watchPublish(await postJSON("/api/publish", {}));
+  api("/api/publish").then((st) => st.running && watchPublish(st)).catch(() => {});
+}
 
 // ---------- 급수표 OCR ----------
 let found = [];
@@ -230,6 +254,7 @@ $("#sheetFile").onchange = async (e) => {
   try {
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("lang", $("#setLang").value);
     const res = await api("/api/ocr/sheet", { method: "POST", body: fd });
     found = res.sets;
     if (!found.length) return setStatus(status, "문장을 찾지 못했어요. 더 가까이, 반듯하게 찍어 주세요.", "error");
@@ -237,7 +262,7 @@ $("#sheetFile").onchange = async (e) => {
       ? `${found.length}개를 찾았어요. 하나씩 눌러 확인하고 저장하세요.`
       : "다 읽었어요. 틀린 글자가 없는지 확인하고 저장하세요.", "ok");
     $("#foundSets").innerHTML = found
-      .map((s, i) => `<button class="chip" data-i="${i}">${esc(s.title)} · ${s.sentences.length}문장</button>`)
+      .map((s, i) => `<button class="chip" data-i="${i}">${esc(s.title)} · ${s.sentences.length}${s.lang === "en" ? "단어" : "문장"}</button>`)
       .join("");
     selectFound(0);
   } catch (err) {
@@ -247,7 +272,7 @@ $("#sheetFile").onchange = async (e) => {
 
 function selectFound(i) {
   document.querySelectorAll("#foundSets .chip").forEach((c) => c.classList.toggle("active", +c.dataset.i === i));
-  fillEditor(found[i].title, found[i].sentences, null);
+  fillEditor(found[i].title, found[i].sentences, null, found[i].lang || $("#setLang").value, found[i].meanings);
 }
 function markFoundSaved(title) {
   document.querySelectorAll("#foundSets .chip.active").forEach((c) => {

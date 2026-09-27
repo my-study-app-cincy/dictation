@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FBF6EE">
+  <meta name="robots" content="noindex">
+  <title>받아쓰기 관리자</title>
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    main { padding-bottom: 40px; }
+    .group-title { font-weight: 700; color: var(--ink-2); font-size: 14px; margin: 14px 0 8px; }
+    .progress { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; font-size: 14.5px; line-height: 1.5; }
+    .progress:empty { display: none; }
+    .progress b { color: var(--brand-deep); }
+    .token-ok { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: var(--ok); }
+    .photo { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .icon-btn svg, .btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+  </svg>
+
+  <header class="appbar">
+    <div class="brand">
+      <span class="logo"><svg class="ic" style="fill:none;stroke:#fff;stroke-width:2"><use href="#i-pencil"/></svg></span>
+      <div>
+        <h1>받아쓰기 관리자</h1>
+        <p>단어·문장 올리기 · 아이 앱에 자동 반영</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 처음 한 번: GitHub 열쇠 -->
+    <div class="card" id="tokenCard">
+      <div class="step"><span>🔑</span>처음 한 번만: GitHub 열쇠</div>
+      <div id="tokenForm">
+        <p class="hint">GitHub에서 만든 열쇠(토큰)를 붙여 넣어 주세요. 이 폰에만 저장돼요.</p>
+        <label class="field">
+          <span class="field-label">열쇠(토큰)</span>
+          <input type="password" id="tokenInput" autocomplete="off" placeholder="github_pat_…">
+        </label>
+        <button class="btn primary block" id="tokenSave">저장</button>
+      </div>
+      <div class="token-ok hidden" id="tokenOk"><span>✓ 연결됨</span><button class="btn sm ghost" id="tokenClear">열쇠 지우기</button></div>
+      <div id="tokenStatus" class="status"></div>
+    </div>
+
+    <div class="card">
+      <div class="step"><span>1</span><em id="formTitle">새로 올리기</em></div>
+      <div class="row">
+        <label class="field" style="flex:1">
+          <span class="field-label">제목</span>
+          <input type="text" id="title" placeholder="예: Unit 08 / 11회">
+        </label>
+        <label class="field">
+          <span class="field-label">종류</span>
+          <select id="lang"><option value="en">영어 단어</option><option value="ko">국어</option></select>
+        </label>
+      </div>
+      <label class="btn ghost block photo" id="photoBtn">
+        <svg><use href="#i-camera"/></svg><span>영어 단어장 사진으로 채우기</span>
+        <input type="file" id="photo" accept="image/*" hidden>
+      </label>
+      <div id="photoStatus" class="status"></div>
+      <label class="field" style="margin-top:14px">
+        <span class="field-label">내용 <small id="count"></small></span>
+        <textarea id="lines" rows="10" placeholder="한 줄에 하나씩&#10;영어: look = 보다&#10;국어: 아버지가 방에 들어가신다."></textarea>
+      </label>
+      <p class="hint" id="splitHint">영어 단어는 5개씩 나눠서 올려요 (예: Unit 08-1, Unit 08-2).</p>
+      <div class="row">
+        <button class="btn ghost" id="resetBtn">새로 쓰기</button>
+        <button class="btn primary" style="flex:1" id="saveBtn">저장하고 아이 앱에 올리기</button>
+      </div>
+      <div id="saveStatus" class="status"></div>
+      <div class="progress" id="progress" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">올라가 있는 목록 <span class="count" id="setCount"></span></div>
+      <div id="setList"><div class="empty">열쇠를 넣으면 목록이 보여요</div></div>
+    </div>
+  </main>
+
+  <script>
+  "use strict";
+  const OWNER = "my-study-app-cincy", REPO = "dictation", PATH = "data/sets.json";
+  const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+  const TOKEN_KEY = "dictation-admin-token";
+  const CHUNK = 5;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const setStatus = (el, msg, kind = "") => { el.textContent = msg; el.className = `status ${kind}`; };
+
+  let token = "";
+  try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch {}
+  let sets = [], sha = null, editingId = null;
+
+  async function gh(path, opts = {}) {
+    const r = await fetch(path.startsWith("http") ? path : API + path, {
+      ...opts,
+      cache: "no-store",
+      headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, ...(opts.body ? { "Content-Type": "application/json" } : {}) },
+    });
+    if (!r.ok) {
+      const msg = r.status === 401 ? "열쇠가 맞지 않아요" : r.status === 403 || r.status === 404 ? "열쇠에 이 저장소 쓰기 권한이 없어요" : r.status === 409 ? "다른 곳에서 먼저 바꿨어요. 다시 해 주세요" : `GitHub 오류 ${r.status}`;
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+  const b64decode = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, "")), (c) => c.charCodeAt(0)));
+  const b64encode = (s) => { const bytes = new TextEncoder().encode(s); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(bin); };
+
+  // ---------- 열쇠 ----------
+  function showToken() {
+    $("#tokenForm").classList.toggle("hidden", !!token);
+    $("#tokenOk").classList.toggle("hidden", !token);
+  }
+  $("#tokenSave").onclick = async () => {
+    token = $("#tokenInput").value.trim();
+    if (!token) return;
+    try {
+      await load();
+      try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+      $("#tokenInput").value = "";
+      setStatus($("#tokenStatus"), "");
+      showToken();
+    } catch (e) { token = ""; setStatus($("#tokenStatus"), e.message, "error"); }
+  };
+  $("#tokenClear").onclick = () => {
+    if (!confirm("이 폰에서 열쇠를 지울까요?")) return;
+    token = ""; try { localStorage.removeItem(TOKEN_KEY); } catch {}
+    sets = []; renderList(); showToken();
+  };
+
+  // ---------- 목록 ----------
+  async function load() {
+    const f = await gh(`/contents/${PATH}?ref=main`);
+    sha = f.sha;
+    sets = JSON.parse(b64decode(f.content));
+    renderList();
+  }
+  function renderList() {
+    $("#setCount").textContent = sets.length || "";
+    if (!sets.length) { $("#setList").innerHTML = `<div class="empty">${token ? "아직 없어요" : "열쇠를 넣으면 목록이 보여요"}</div>`; return; }
+    const group = (lang, name) => {
+      const list = sets.filter((s) => (s.lang || "ko") === lang);
+      if (!list.length) return "";
+      return `<div class="group-title">${name} ${list.length}개</div><ul class="set-list">${list.map((s) => `
+        <li class="set-item" data-id="${s.id}">
+          <div class="set-main">
+            <div class="set-title">${esc(s.title)}<small>${s.sentences.length}${lang === "en" ? "단어" : "문장"}</small></div>
+            <div class="set-preview">${esc(s.sentences.join(", "))}</div>
+          </div>
+          <div class="set-actions">
+            <button class="icon-btn" data-act="edit" aria-label="고치기"><svg><use href="#i-pencil"/></svg></button>
+            <button class="icon-btn" data-act="del" aria-label="지우기"><svg><use href="#i-trash"/></svg></button>
+          </div>
+        </li>`).join("")}</ul>`;
+    };
+    $("#setList").innerHTML = group("en", "영어") + group("ko", "국어");
+  }
+  $("#setList").onclick = async (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const s = sets.find((x) => x.id === b.closest("li").dataset.id);
+    if (b.dataset.act === "edit") {
+      editingId = s.id;
+      $("#title").value = s.title; $("#lang").value = s.lang || "ko";
+      $("#lines").value = s.sentences.map((w, i) => (s.meanings?.[i] ? `${w} = ${s.meanings[i]}` : w)).join("\n");
+      $("#formTitle").textContent = `고치기: ${s.title}`;
+      updateCount(); window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (b.dataset.act === "del" && confirm(`'${s.title}'을(를) 아이 앱에서 지울까요?`)) {
+      await commit((list) => list.filter((x) => x.id !== s.id), `'${s.title}' 지우기`, []);
+    }
+  };
+
+  // ---------- 입력 ----------
+  function parseLines() {
+    const lang = $("#lang").value;
+    return $("#lines").value.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
+      if (lang !== "en") return [l, ""];
+      const [w, ...m] = l.split(/\s*=\s*/);
+      return [w.replace(/\s*\/\s*/g, " / ").trim(), m.join(" = ").trim()];
+    });
+  }
+  function updateCount() {
+    const n = parseLines().length, en = $("#lang").value === "en";
+    $("#count").textContent = n ? `${n}${en ? "단어" : "문장"}${en && n > CHUNK && !editingId ? ` → ${Math.ceil(n / CHUNK)}개로 나눠요` : ""}` : "";
+    $("#splitHint").classList.toggle("hidden", !en);
+    $("#photoBtn").classList.toggle("hidden", !en);
+  }
+  $("#lines").oninput = updateCount;
+  $("#lang").onchange = updateCount;
+  const reset = () => { editingId = null; $("#title").value = ""; $("#lines").value = ""; $("#formTitle").textContent = "새로 올리기"; updateCount(); };
+  $("#resetBtn").onclick = reset;
+
+  // ---------- 사진 (영어 단어장) ----------
+  let ocrLib = null;
+  const loadOcr = () => ocrLib ||= new Promise((ok, fail) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = () => ok(window.Tesseract); s.onerror = () => { ocrLib = null; fail(new Error("사진 읽기 도구를 불러오지 못했어요")); };
+    document.head.append(s);
+  });
+  function wordsFromText(text) {
+    const out = []; let unit = "";
+    for (let line of text.split("\n")) {
+      line = line.trim(); if (!line) continue;
+      const u = line.match(/(unit|lesson|day)\s*\.?\s*(\d+)/i);
+      if (u && !unit) { unit = `Unit ${String(+u[2]).padStart(2, "0")}`; continue; }
+      const body = line.replace(/^\(?\d+[.)]?\s*/, "");
+      const m = body.match(/[A-Za-z][A-Za-z'’-]*(?:\s*\/\s*[A-Za-z][A-Za-z'’-]*|\s+[A-Za-z][A-Za-z'’-]*)*/);
+      if (!m) continue;
+      const word = m[0].replace(/\s*\/\s*/g, " / ").replace(/\s+/g, " ").trim();
+      if (/^(words?|meaning|english|voca(bulary)?)$/i.test(word) || word.length < 2 && !/^[aI]$/.test(word)) continue;
+      let meaning = ((body.slice(m.index + m[0].length) + " " + body.slice(0, m.index)).match(/[~가-힣][가-힣0-9~ ,()·]*/g) || []).join(" ").trim().replace(/[ ,]+$/, "");
+      // 사진 읽기가 "하 나 의"처럼 글자마다 띄우는 경우
+      meaning = meaning.split(/\s*,\s*/).map((p) => (/^([가-힣] )+[가-힣]$/.test(p) ? p.replace(/ /g, "") : p)).join(", ");
+      out.push(meaning ? `${word} = ${meaning}` : word);
+    }
+    return { unit, lines: out };
+  }
+  $("#photo").onchange = async (e) => {
+    const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+    const st = $("#photoStatus");
+    try {
+      setStatus(st, "사진을 읽고 있어요… (처음엔 30초쯤 걸려요)", "loading");
+      const T = await loadOcr();
+      const { data } = await T.recognize(file, "eng+kor");
+      const { unit, lines } = wordsFromText(data.text);
+      if (!lines.length) return setStatus(st, "단어를 찾지 못했어요. 더 가까이, 반듯하게 찍어 주세요.", "error");
+      if (unit && !$("#title").value) $("#title").value = unit;
+      $("#lines").value = lines.join("\n");
+      updateCount();
+      setStatus(st, `${lines.length}개 읽었어요. 틀린 글자·뜻이 없는지 꼭 확인해 주세요.`, "ok");
+    } catch (err) { setStatus(st, `읽기 실패: ${err.message}`, "error"); }
+  };
+
+  // ---------- 저장 ----------
+  const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, "0")).join("");
+  // 목록을 바꿔 GitHub에 저장한다. 그사이 다른 곳에서 바뀌었으면 최신을 받아 한 번 더 한다.
+  async function commit(change, message, newSentences) {
+    const st = $("#saveStatus");
+    setStatus(st, "올리는 중…", "loading");
+    try {
+      let res;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          await load();
+          const next = change(structuredClone(sets));
+          res = await gh(`/contents/${PATH}`, { method: "PUT", body: JSON.stringify({
+            message, sha, branch: "main", content: b64encode(JSON.stringify(next, null, 1)),
+          }) });
+          sets = next; sha = res.content.sha; renderList();
+          break;
+        } catch (e) { if (attempt || !/먼저 바꿨/.test(e.message)) throw e; }
+      }
+      setStatus(st, "저장했어요!", "ok");
+      watch(newSentences);
+    } catch (e) { setStatus(st, `올리지 못했어요: ${e.message}`, "error"); }
+  }
+  $("#saveBtn").onclick = async () => {
+    const title = $("#title").value.trim(), lang = $("#lang").value, pairs = parseLines();
+    if (!title) return alert("제목을 넣어 주세요.");
+    if (!pairs.length) return alert("내용을 한 줄 이상 넣어 주세요.");
+    if (!token) return alert("먼저 맨 위에 GitHub 열쇠를 넣어 주세요.");
+    const now = Date.now() / 1000;
+    const make = (id, t, p) => ({ id, title: t, sentences: p.map((x) => x[0]), lang, updated: now,
+      ...(lang === "en" && p.some((x) => x[1]) ? { meanings: p.map((x) => x[1]) } : {}) });
+    let items;
+    if (editingId) items = [make(editingId, title, pairs)];
+    else if (lang === "en" && pairs.length > CHUNK)
+      items = Array.from({ length: Math.ceil(pairs.length / CHUNK) }, (_, i) => make(newId(), `${title}-${i + 1}`, pairs.slice(i * CHUNK, i * CHUNK + CHUNK)));
+    else items = [make(newId(), title, pairs)];
+    const id = editingId;
+    await commit((list) => {
+      if (id) return list.map((s) => (s.id === id ? { ...s, ...items[0] } : s));
+      return [...list, ...items];
+    }, `${items.map((i) => i.title).join(", ")} ${id ? "고치기" : "올리기"}`, items.flatMap((i) => i.sentences.map((t) => [t, lang])));
+    reset();
+  };
+
+  // ---------- 음성 만들기 기다리기 ----------
+  async function watch(needed) {
+    const box = $("#progress");
+    const key = ([t, lang]) => `${lang === "en" ? "en|" : ""}-20|${lang === "ko"}|${t}`;
+    const started = Date.now();
+    if (!needed.length) { box.innerHTML = "1~2분 뒤 아이 앱을 다시 열면 반영돼요."; return; }
+    box.innerHTML = "GitHub에서 <b>음성을 만드는 중</b>이에요 (보통 2~4분). 이 화면을 닫아도 계속 만들어져요.";
+    while (Date.now() - started < 15 * 60 * 1000) {
+      await sleep(15000);
+      try {
+        const f = await gh(`/contents/audio/index.json?ref=main`);
+        const blob = f.content ? b64decode(f.content) : await (await fetch(f.download_url, { cache: "no-store" })).text();
+        const idx = JSON.parse(blob);
+        const left = needed.filter((n) => !idx[key(n)]).length;
+        if (!left) {
+          box.innerHTML = "✓ 음성 완성! <b>1~2분 뒤</b> 아이 폰에서 앱을 열면 보여요. (안 보이면 앱을 닫았다 다시 열기)";
+          return;
+        }
+        box.innerHTML = `GitHub에서 <b>음성을 만드는 중</b>이에요… (${Math.round((Date.now() - started) / 60000)}분 지남) 이 화면을 닫아도 계속 만들어져요.`;
+      } catch {}
+    }
+    box.innerHTML = "음성이 아직 안 만들어졌어요. 조금 뒤 목록을 새로 고쳐 확인해 주세요.";
+  }
+
+  showToken(); updateCount();
+  if (token) load().catch((e) => setStatus($("#tokenStatus"), e.message, "error"));
+  </script>
+</body>
+</html>

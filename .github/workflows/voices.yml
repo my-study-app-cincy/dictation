@@ -1,0 +1,43 @@
+# 폰 관리자 화면(admin.html)에서 받아쓰기·단어를 저장하면, 새 문장의 음성을 만들어 올린다.
+name: 음성 만들기
+
+on:
+  push:
+    branches: [main]
+    paths: [data/sets.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: voices
+  cancel-in-progress: false
+
+jobs:
+  voices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install -q edge-tts numpy
+      - run: python tools/sync_audio.py .
+        env:
+          TTS_CACHE_DIR: ${{ runner.temp }}/tts
+      - name: 올리기
+        run: |
+          git config user.name "dictation-bot"
+          git config user.email "dictation-bot@users.noreply.github.com"
+          git add -A audio sw.js
+          git diff --cached --quiet && exit 0
+          git commit -m "음성 만들기"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      # GITHUB_TOKEN 으로 올린 커밋은 페이지를 다시 만들지 않을 수 있어서 직접 요청한다
+      - run: gh api -X POST repos/${{ github.repository }}/pages/builds || true
+        env:
+          GH_TOKEN: ${{ github.token }}

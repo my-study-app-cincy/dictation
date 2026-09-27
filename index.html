@@ -56,8 +56,8 @@
         <div class="step"><span>1</span>급수표 찍기</div>
         <label class="dropzone">
           <span class="dz-icon"><svg class="ic"><use href="#i-camera"/></svg></span>
-          <b>급수표 사진 찍기 · 고르기</b>
-          <small>한 장에 여러 회(급)가 있어도 나눠서 찾아요</small>
+          <b>급수표 · 영어 단어장 사진 찍기</b>
+          <small>영어 단어장이면 아래 '종류'를 먼저 '영어 단어'로 골라 주세요</small>
           <input type="file" id="sheetFile" accept="image/*" hidden>
         </label>
         <div id="sheetStatus" class="status"></div>
@@ -85,6 +85,13 @@
           <button class="btn ghost" id="newSet"><svg class="ic"><use href="#i-plus"/></svg>새로 쓰기</button>
           <button class="btn primary grow" id="saveSet"><svg class="ic"><use href="#i-save"/></svg>저장하기</button>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="step"><span>3</span>아이 폰에 보내기</div>
+        <p class="hint">저장한 받아쓰기·단어와 음성을 아이 앱에 올려요. 폰 관리자 화면에서 올린 것도 합쳐져요.</p>
+        <button class="btn primary" id="publishBtn" style="width:100%"><svg class="ic"><use href="#i-save"/></svg>아이 폰에 보내기</button>
+        <div id="publishStatus" class="status"></div>
       </div>
 
       <div class="card">
