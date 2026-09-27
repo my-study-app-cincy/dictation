@@ -594,7 +594,15 @@ updateSettingsSummary();
 if (STATIC) {
   $("#voiceInfo").textContent = "목소리: Microsoft ko-KR-SunHiNeural (미리 만들어 둔 음성)";
   showTab("dictate");
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if ("serviceWorker" in navigator) {
+    // 새 버전이 설치되면 한 번 새로 고쳐 바로 보이게 한다
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+    });
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+  }
 } else {
   api("/api/tts/info")
     .then((i) => ($("#voiceInfo").textContent = `목소리: ${i.provider === "clova" ? "네이버 CLOVA" : "Microsoft"} ${i.voice}`))
