@@ -172,14 +172,28 @@
   "lang": "ko"
  },
  {
-  "id": "075f623e",
-  "title": "Unit 05",
+  "id": "ced9ea71",
+  "title": "Unit 05-1",
   "sentences": [
    "look",
    "inside",
    "have",
    "eraser",
-   "backpack",
+   "backpack"
+  ],
+  "lang": "en",
+  "meanings": [
+   "보다",
+   "내부, 안쪽",
+   "가지다",
+   "지우개",
+   "책가방"
+  ]
+ },
+ {
+  "id": "a5010997",
+  "title": "Unit 05-2",
+  "sentences": [
    "notebook",
    "ruler",
    "pen",
@@ -188,11 +202,6 @@
   ],
   "lang": "en",
   "meanings": [
-   "보다",
-   "내부, 안쪽",
-   "가지다",
-   "지우개",
-   "책가방",
    "공책",
    "자",
    "펜",
@@ -239,14 +248,28 @@
   ]
  },
  {
-  "id": "e17823c6",
-  "title": "Unit 07",
+  "id": "20bb9f2d",
+  "title": "Unit 07-1",
   "sentences": [
    "here",
    "my",
    "classroom",
    "desk",
-   "chair",
+   "chair"
+  ],
+  "lang": "en",
+  "meanings": [
+   "여기",
+   "나의",
+   "교실",
+   "책상",
+   "의자"
+  ]
+ },
+ {
+  "id": "425ffa92",
+  "title": "Unit 07-2",
+  "sentences": [
    "bag",
    "locker",
    "teacher",
@@ -255,11 +278,6 @@
   ],
   "lang": "en",
   "meanings": [
-   "여기",
-   "나의",
-   "교실",
-   "책상",
-   "의자",
    "가방",
    "사물함",
    "선생님",
