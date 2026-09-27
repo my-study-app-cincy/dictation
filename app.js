@@ -266,25 +266,6 @@ class Aborted extends Error {}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const RING = 2 * Math.PI * 52;
 
-// 단어 경계 근처에서 소리가 가장 작은 지점으로 자리를 옮긴다(단어 중간이 잘리지 않게).
-function quietCuts(buf, cuts) {
-  const d = buf.getChannelData(0), sr = buf.sampleRate, win = Math.round(sr * 0.005);
-  const energy = (t) => {
-    const i = Math.max(0, Math.round(t * sr));
-    let e = 0;
-    for (let j = i; j < Math.min(d.length, i + win); j++) e += d[j] * d[j];
-    return e;
-  };
-  return cuts.map((c) => {
-    let best = c, low = Infinity;
-    for (let t = Math.max(0.02, c - 0.08); t <= Math.min(buf.duration - 0.02, c + 0.08); t += 0.005) {
-      const e = energy(t);
-      if (e < low) { low = e; best = t; }
-    }
-    return best;
-  });
-}
-
 // Web Audio로 재생한다: 띄어쓰기 자리(cuts)에 정확히 쉼을 넣을 수 있고, 일시정지도 한 번에 된다.
 const voice = {
   ctx: null,
@@ -318,15 +299,20 @@ const voice = {
   // clip을 재생하면서 cuts 자리마다 gap초 쉼을 더 넣는다. 끝나거나 stop()되면 resolve.
   play({ buf, cuts }, gap = 0) {
     const ctx = this.context();
-    const bounds = [0, ...quietCuts(buf, cuts.filter((c) => c > 0 && c < buf.duration)), buf.duration];
+    const bounds = [0, ...cuts.filter((c) => c > 0 && c < buf.duration), buf.duration];
     return new Promise((resolve) => {
       const entry = { sources: [], resolve };
       let t = ctx.currentTime + 0.05;
       for (let i = 0; i < bounds.length - 1; i++) {
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        src.connect(ctx.destination);
         const dur = bounds[i + 1] - bounds[i];
+        // 쉼을 넣는 자리는 소리를 살짝 줄였다 키워서 뚝 끊기지 않게 한다
+        const g = ctx.createGain();
+        const fade = gap > 0 ? Math.min(0.04, dur / 4) : 0;
+        if (fade && i > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + fade); }
+        if (fade && i < bounds.length - 2) { g.gain.setValueAtTime(1, t + dur - fade); g.gain.linearRampToValueAtTime(0, t + dur); }
+        src.connect(g).connect(ctx.destination);
         src.start(t, bounds[i], dur);
         t += dur + gap;
         entry.sources.push(src);
