@@ -261,6 +261,11 @@ $("#foundSets").onclick = (e) => {
 };
 
 // ---------- 받아쓰기 (불러주기) ----------
+// 안내 멘트 (scripts/build_mobile.py 의 LINES 와 같아야 한다)
+const LINES = {
+  ko: { start: "받아쓰기를 시작할게요.", num: (n) => `${n}번.`, end: "받아쓰기 끝. 정말 수고했어요!" },
+  en: { start: "Let's start the English test now.", num: (n) => `Number ${n}.`, end: "That's the end of the test. Great job!" },
+};
 class Aborted extends Error {}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -309,7 +314,7 @@ const voice = {
         const dur = bounds[i + 1] - bounds[i];
         // 쉼을 넣는 자리는 소리를 살짝 줄였다 키워서 뚝 끊기지 않게 한다
         const g = ctx.createGain();
-        const fade = gap > 0 ? Math.min(0.04, dur / 4) : 0;
+        const fade = gap > 0 ? Math.min(0.01, dur / 4) : 0;
         if (fade && i > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + fade); }
         if (fade && i < bounds.length - 2) { g.gain.setValueAtTime(1, t + dur - fade); g.gain.linearRampToValueAtTime(0, t + dur); }
         src.connect(g).connect(ctx.destination);
@@ -442,9 +447,10 @@ const player = {
   prefetch() {
     // 음성을 미리 만들어 두어서 문장 사이에 끊김이 없게 한다.
     const ko = this.lang === "ko";
-    const jobs = [["받아쓰기를 시작할게요.", false, "ko"]];
-    this.sentences.forEach((s, i) => jobs.push([`${i + 1}번.`, false, "ko"], [s, ko, this.lang]));
-    jobs.push(["받아쓰기 끝. 정말 수고했어요!", false, "ko"]);
+    const L = LINES[this.lang];
+    const jobs = [[L.start, false, this.lang]];
+    this.sentences.forEach((s, i) => jobs.push([L.num(i + 1), false, this.lang], [s, ko, this.lang]));
+    jobs.push([L.end, false, this.lang]);
     (async () => {
       for (const [t, spaced, lang] of jobs) {
         try { await voice.load(t, spaced, lang); } catch {}
@@ -466,7 +472,7 @@ const player = {
         this.setRing(0);
         this.setMode("listening", "받아쓰기를 시작할게요");
         this.render();
-        await this.say("받아쓰기를 시작할게요.", gen);
+        await this.say(LINES[this.lang].start, gen, false, this.lang);
         await this.wait(800, gen);
       }
       for (; this.idx < this.sentences.length; this.idx++) {
@@ -475,7 +481,7 @@ const player = {
         this.setRing(0);
         this.setMode("listening", "잘 들어 보세요 👂");
         this.render();
-        await this.say(`${this.idx + 1}번.`, gen);
+        await this.say(LINES[this.lang].num(this.idx + 1), gen, false, this.lang);
         await this.wait(600, gen);
         for (let r = 0; r < repeat; r++) {
           await this.say(s, gen, this.lang === "ko", this.lang);
@@ -492,7 +498,7 @@ const player = {
       this.finished = true;
       this.setMode("done", "끝! 수고했어요 🎉");
       this.render();
-      await this.say("받아쓰기 끝. 정말 수고했어요!", gen);
+      await this.say(LINES[this.lang].end, gen, false, this.lang);
       $("#goGrade").classList.remove("hidden");
       this.running = false;
       this.render();
