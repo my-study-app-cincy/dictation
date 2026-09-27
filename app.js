@@ -266,6 +266,25 @@ class Aborted extends Error {}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const RING = 2 * Math.PI * 52;
 
+// 단어 경계 근처에서 소리가 가장 작은 지점으로 자리를 옮긴다(단어 중간이 잘리지 않게).
+function quietCuts(buf, cuts) {
+  const d = buf.getChannelData(0), sr = buf.sampleRate, win = Math.round(sr * 0.005);
+  const energy = (t) => {
+    const i = Math.max(0, Math.round(t * sr));
+    let e = 0;
+    for (let j = i; j < Math.min(d.length, i + win); j++) e += d[j] * d[j];
+    return e;
+  };
+  return cuts.map((c) => {
+    let best = c, low = Infinity;
+    for (let t = Math.max(0.02, c - 0.08); t <= Math.min(buf.duration - 0.02, c + 0.08); t += 0.005) {
+      const e = energy(t);
+      if (e < low) { low = e; best = t; }
+    }
+    return best;
+  });
+}
+
 // Web Audio로 재생한다: 띄어쓰기 자리(cuts)에 정확히 쉼을 넣을 수 있고, 일시정지도 한 번에 된다.
 const voice = {
   ctx: null,
@@ -299,7 +318,7 @@ const voice = {
   // clip을 재생하면서 cuts 자리마다 gap초 쉼을 더 넣는다. 끝나거나 stop()되면 resolve.
   play({ buf, cuts }, gap = 0) {
     const ctx = this.context();
-    const bounds = [0, ...cuts.filter((c) => c > 0 && c < buf.duration), buf.duration];
+    const bounds = [0, ...quietCuts(buf, cuts.filter((c) => c > 0 && c < buf.duration)), buf.duration];
     return new Promise((resolve) => {
       const entry = { sources: [], resolve };
       let t = ctx.currentTime + 0.05;

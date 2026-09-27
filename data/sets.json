@@ -201,14 +201,28 @@
   ]
  },
  {
-  "id": "eb37dca5",
-  "title": "Unit 06",
+  "id": "a2eb7231",
+  "title": "Unit 06-1",
   "sentences": [
    "all",
    "these",
    "shape",
    "it",
-   "circle",
+   "circle"
+  ],
+  "lang": "en",
+  "meanings": [
+   "모든",
+   "이것들, 이 (this 복수형)",
+   "모양",
+   "그것",
+   "원"
+  ]
+ },
+ {
+  "id": "1e993e53",
+  "title": "Unit 06-2",
+  "sentences": [
    "rectangle",
    "triangle",
    "square",
@@ -217,11 +231,6 @@
   ],
   "lang": "en",
   "meanings": [
-   "모든",
-   "이것들, 이 (this 복수형)",
-   "모양",
-   "그것",
-   "원",
    "직사각형",
    "삼각형",
    "사각형",
