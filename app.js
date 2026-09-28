@@ -107,7 +107,7 @@ function renderPickers() {
       ? switcher + sets
           .filter((s) => langOf(s) === lang)
           .map((s) => {
-            const status = s.score != null ? `✓ ${s.score}점` : s.done ? "✓ 완료" : "";
+            const status = s.score != null ? `✓ ${s.score}점` : s.done ? "✓ 완료" : s.id === sel.value ? "연습중" : "대기";
             return `<button class="rp ${s.done ? "done" : ""} ${s.id === sel.value ? "active" : ""}" data-id="${s.id}">
               <b class="${roundLabel(s).length > 4 ? "long" : ""}">${esc(roundLabel(s))}</b><small>${status}</small></button>`;
           })
@@ -591,6 +591,22 @@ $("#replayBtn").onclick = () => player.jump(0);
 $("#prevBtn").onclick = () => player.jump(-1);
 $("#nextBtn").onclick = () => player.jump(1);
 $("#showText").onchange = (e) => $("#curText").classList.toggle("hidden-text", !e.target.checked);
+
+// 응원 한마디: 열 때마다 하나씩 골라 보여 준다
+const CHEERS = [
+  ["👀", "엄마가 보고 있다… 또박또박!"],
+  ["👀", "엄마 눈은 다 보여요~ 천천히 써 볼까?"],
+  ["🕵️", "엄마 탐정이 지켜보는 중! 받침 조심!"],
+  ["🤫", "쉿! 엄마가 뒤에서 보고 있어요"],
+  ["💪", "엄마가 응원하고 있어! 틀려도 괜찮아"],
+  ["🤗", "엄마가 옆에서 지켜볼게. 끝까지 해 보자!"],
+  ["⭐", "다 쓰면 엄마한테 자랑하기!"],
+];
+{
+  const [face, msg] = CHEERS[Math.floor(Math.random() * CHEERS.length)];
+  $("#cheerFace").textContent = face;
+  $("#cheerMsg").textContent = msg;
+}
 $("#dictSet").onchange = () => {
   player.stop();
   player.load();
@@ -747,10 +763,10 @@ function saveScore(set, score) {
 }
 
 function scoreMessage(score) {
-  if (score === 100) return "참 잘했어요! 💯";
-  if (score >= 80) return "잘했어요! 👏";
-  if (score >= 60) return "조금만 더 힘내요! 💪";
-  return "다시 도전해 봐요! 🌱";
+  if (score === 100) return "👀 엄마가 봤다! 최고야! 💯";
+  if (score >= 80) return "잘했어요! 엄마가 박수 👏";
+  if (score >= 60) return "조금만 더! 엄마가 응원해 💪";
+  return "엄마랑 같이 한 번 더 해 볼까? 🌱";
 }
 
 async function regrade() {
