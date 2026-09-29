@@ -86,7 +86,8 @@ async function loadSets() {
 const findSet = (id) => sets.find((s) => s.id === id);
 
 // ---------- 회차 고르기 ----------
-const roundLabel = (s) => s.title.split(" · ")[0];
+// 영어는 "Unit 05-1" 전체를 쓰면 카드 폭을 넘어가니 "05-1"처럼 줄여 보여 준다
+const roundLabel = (s) => (langOf(s) === "en" ? s.title.replace(/^Unit\s*/i, "") : s.title.split(" · ")[0]);
 
 const LANG_NAMES = { ko: "국어", en: "영어" };
 const langOf = (s) => s?.lang || "ko";
