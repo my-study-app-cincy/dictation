@@ -67,15 +67,17 @@
         </label>
       </div>
       <label class="btn ghost block photo" id="photoBtn">
-        <svg><use href="#i-camera"/></svg><span>영어 단어장 사진으로 채우기</span>
-        <input type="file" id="photo" accept="image/*" hidden>
+        <svg><use href="#i-camera"/></svg><span id="photoBtnLabel">영어 단어장 사진으로 채우기</span>
+        <input type="file" id="photo" accept="image/*" capture="environment" hidden>
       </label>
       <div id="photoStatus" class="status"></div>
+      <div id="foundSets" class="chips"></div>
       <label class="field" style="margin-top:14px">
         <span class="field-label">내용 <small id="count"></small></span>
         <textarea id="lines" rows="10" placeholder="한 줄에 하나씩&#10;영어: look = 보다&#10;국어: 아버지가 방에 들어가신다."></textarea>
       </label>
-      <p class="hint" id="splitHint">영어 단어는 5개씩 나눠서 올려요 (예: Unit 08-1, Unit 08-2).</p>
+      <p class="hint" id="splitHintEn">영어 단어는 5개씩 나눠서 올려요 (예: Unit 08-1, Unit 08-2).</p>
+      <p class="hint" id="splitHintKo">사진으로 읽은 글자는 틀릴 수 있어요. 저장 전에 꼭 한 번 읽어 확인해 주세요.</p>
       <div class="row">
         <button class="btn ghost" id="resetBtn">새로 쓰기</button>
         <button class="btn primary" style="flex:1" id="saveBtn">저장하고 아이 앱에 올리기</button>
@@ -195,15 +197,16 @@
   function updateCount() {
     const n = parseLines().length, en = $("#lang").value === "en";
     $("#count").textContent = n ? `${n}${en ? "단어" : "문장"}${en && n > CHUNK && !editingId ? ` → ${Math.ceil(n / CHUNK)}개로 나눠요` : ""}` : "";
-    $("#splitHint").classList.toggle("hidden", !en);
-    $("#photoBtn").classList.toggle("hidden", !en);
+    $("#splitHintEn").classList.toggle("hidden", !en);
+    $("#splitHintKo").classList.toggle("hidden", en);
+    $("#photoBtnLabel").textContent = en ? "영어 단어장 사진으로 채우기" : "급수표 사진으로 채우기";
   }
   $("#lines").oninput = updateCount;
   $("#lang").onchange = updateCount;
-  const reset = () => { editingId = null; $("#title").value = ""; $("#lines").value = ""; $("#formTitle").textContent = "새로 올리기"; updateCount(); };
+  const reset = () => { editingId = null; $("#title").value = ""; $("#lines").value = ""; $("#formTitle").textContent = "새로 올리기"; $("#foundSets").innerHTML = ""; updateCount(); };
   $("#resetBtn").onclick = reset;
 
-  // ---------- 사진 (영어 단어장) ----------
+  // ---------- 사진 ----------
   let ocrLib = null;
   const loadOcr = () => ocrLib ||= new Promise((ok, fail) => {
     const s = document.createElement("script");
@@ -229,19 +232,87 @@
     }
     return { unit, lines: out };
   }
+
+  // 국어 급수표: PC판(app/parse.py)과 같은 규칙으로 문장을 회차별로 나눈다.
+  // "N. 문장" 처럼 번호가 있으면 번호 줄만 문제로 보고(번호 없는 줄은 앞 문장이 이어진 것),
+  // 번호가 아예 없으면 한글이 있는 줄을 전부 문제로 본다. "1회" 같은 줄이 나오면 새 회차 시작.
+  function splitNumber(line) {
+    const m = line.match(/^\s*(\d{1,2})(?:\s*[.)．,:·\]]\s*|\s+|(?!학년|학기|회|급))(\D.*)$/);
+    return m ? [parseInt(m[1], 10), m[2].trim()] : [null, line.trim()];
+  }
+  function headingOf(line) {
+    const m = line.match(/^\s*(?:받아쓰기\s*)?(\d{1,2})\s*(회|급)(?![가-힣])/);
+    return m ? [parseInt(m[1], 10), `${m[1]}${m[2]}`] : null;
+  }
+  function sheetsFromText(text) {
+    const HANGUL = /[가-힣]/, END = [".", "?", "!", "。"];
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    const numberedMode = lines.filter((l) => { const [n] = splitNumber(l); return n !== null && !headingOf(l); }).length >= 2;
+    const found = [];
+    let cur = { title: "", order: 0, items: [] };
+    const flush = () => {
+      const byNum = new Map(cur.items); // 같은 번호는 나중 것이 남는다(단원명이 먼저, 문장이 나중)
+      const sentences = [...byNum.keys()].sort((a, b) => a - b).map((k) => byNum.get(k)).filter(Boolean);
+      if (sentences.length) found.push({ title: cur.title, order: cur.order, sentences });
+    };
+    for (const line of lines) {
+      const head = headingOf(line);
+      if (head) { flush(); cur = { title: head[1], order: head[0], items: [] }; continue; }
+      const [num, body] = splitNumber(line);
+      if (numberedMode) {
+        if (num !== null && HANGUL.test(body)) cur.items.push([num, body]);
+        else if (cur.items.length && !END.includes(cur.items[cur.items.length - 1][1].slice(-1))) {
+          const [n, prev] = cur.items[cur.items.length - 1];
+          cur.items[cur.items.length - 1] = [n, `${prev} ${line}`];
+        }
+      } else if (HANGUL.test(line) && line.length >= 2) {
+        cur.items.push([cur.items.length + 1, line]);
+      }
+    }
+    flush();
+    found.sort((a, b) => a.order - b.order);
+    found.forEach((s, i) => { if (!s.title) s.title = found.length === 1 ? "새 받아쓰기" : `받아쓰기 ${i + 1}`; });
+    return found;
+  }
+
+  let found = [];
+  function selectFound(i) {
+    document.querySelectorAll("#foundSets .chip").forEach((c, ci) => c.classList.toggle("active", ci === i));
+    if (!$("#title").value || document.querySelectorAll("#foundSets .chip.active").length) $("#title").value = found[i].title;
+    $("#lines").value = found[i].sentences.join("\n");
+    updateCount();
+  }
+  $("#foundSets").onclick = (e) => {
+    const chip = e.target.closest(".chip");
+    if (chip) selectFound(+chip.dataset.i);
+  };
+
   $("#photo").onchange = async (e) => {
     const file = e.target.files[0]; e.target.value = ""; if (!file) return;
-    const st = $("#photoStatus");
+    const st = $("#photoStatus"), en = $("#lang").value === "en";
+    $("#foundSets").innerHTML = ""; found = [];
     try {
       setStatus(st, "사진을 읽고 있어요… (처음엔 30초쯤 걸려요)", "loading");
       const T = await loadOcr();
       const { data } = await T.recognize(file, "eng+kor");
-      const { unit, lines } = wordsFromText(data.text);
-      if (!lines.length) return setStatus(st, "단어를 찾지 못했어요. 더 가까이, 반듯하게 찍어 주세요.", "error");
-      if (unit && !$("#title").value) $("#title").value = unit;
-      $("#lines").value = lines.join("\n");
-      updateCount();
-      setStatus(st, `${lines.length}개 읽었어요. 틀린 글자·뜻이 없는지 꼭 확인해 주세요.`, "ok");
+      if (en) {
+        const { unit, lines } = wordsFromText(data.text);
+        if (!lines.length) return setStatus(st, "단어를 찾지 못했어요. 더 가까이, 반듯하게 찍어 주세요.", "error");
+        if (unit && !$("#title").value) $("#title").value = unit;
+        $("#lines").value = lines.join("\n");
+        updateCount();
+        setStatus(st, `${lines.length}개 읽었어요. 틀린 글자·뜻이 없는지 꼭 확인해 주세요.`, "ok");
+      } else {
+        found = sheetsFromText(data.text);
+        if (!found.length) return setStatus(st, "문장을 찾지 못했어요. 더 가까이, 반듯하게 찍어 주세요.", "error");
+        if (found.length > 1) {
+          setStatus(st, `${found.length}개 회차를 찾았어요. 하나씩 눌러 확인하고 저장하세요.`, "ok");
+          $("#foundSets").innerHTML = found.map((s, i) => `<button class="chip" data-i="${i}">${esc(s.title)} · ${s.sentences.length}문장</button>`).join("");
+        } else {
+          setStatus(st, "다 읽었어요. 틀린 글자가 없는지 확인하고 저장하세요.", "ok");
+        }
+        selectFound(0);
+      }
     } catch (err) { setStatus(st, `읽기 실패: ${err.message}`, "error"); }
   };
 
