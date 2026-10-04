@@ -199,7 +199,8 @@
    "가지다",
    "지우개",
    "책가방"
-  ]
+  ],
+  "done": true
  },
  {
   "id": "a5010997",
@@ -219,11 +220,32 @@
    "펜",
    "~없는, 아닌",
    "하나의"
+  ],
+  "done": true
+ },
+ {
+  "id": "acb599a9",
+  "title": "Unit 06-1",
+  "sentences": [
+   "gloves",
+   "umbrella",
+   "windy",
+   "ready",
+   "park"
+  ],
+  "lang": "en",
+  "updated": 1791127957.5046966,
+  "meanings": [
+   "장갑",
+   "우산",
+   "바람이 부는",
+   "준비 된",
+   "공원"
   ]
  },
  {
   "id": "a2eb7231",
-  "title": "Unit 06-1",
+  "title": "Unit 06-2",
   "sentences": [
    "all",
    "these",
@@ -232,7 +254,7 @@
    "circle"
   ],
   "lang": "en",
-  "updated": 1790481190.4661028,
+  "updated": 1791127957.4251535,
   "meanings": [
    "모든",
    "이것들, 이 (this 복수형)",
@@ -242,8 +264,28 @@
   ]
  },
  {
+  "id": "bfd7daa1",
+  "title": "Unit 06-3",
+  "sentences": [
+   "lemonade",
+   "egg",
+   "tea",
+   "salad",
+   "soda"
+  ],
+  "lang": "en",
+  "updated": 1791127957.519247,
+  "meanings": [
+   "레모네이드",
+   "계란",
+   "(마시는)차",
+   "샐러드",
+   "탄산음료"
+  ]
+ },
+ {
   "id": "1e993e53",
-  "title": "Unit 06-2",
+  "title": "Unit 06-4",
   "sentences": [
    "rectangle",
    "triangle",
@@ -252,7 +294,7 @@
    "melt"
   ],
   "lang": "en",
-  "updated": 1790481190.4807668,
+  "updated": 1791127957.4324489,
   "meanings": [
    "직사각형",
    "삼각형",
@@ -262,8 +304,28 @@
   ]
  },
  {
+  "id": "06f76c5d",
+  "title": "Unit 06-5",
+  "sentences": [
+   "meat",
+   "toast",
+   "chips",
+   "like",
+   "don't like"
+  ],
+  "lang": "en",
+  "updated": 1791127957.5314589,
+  "meanings": [
+   "고기",
+   "토스트",
+   "감자칩",
+   "좋아하다",
+   "좋아하지 않다"
+  ]
+ },
+ {
   "id": "20bb9f2d",
-  "title": "Unit 07-1",
+  "title": "Unit 06-6",
   "sentences": [
    "here",
    "my",
@@ -272,7 +334,7 @@
    "chair"
   ],
   "lang": "en",
-  "updated": 1790481270.5136368,
+  "updated": 1791127957.4767003,
   "meanings": [
    "여기",
    "나의",
@@ -282,8 +344,28 @@
   ]
  },
  {
+  "id": "a8b6b23b",
+  "title": "Unit 06-7",
+  "sentences": [
+   "English",
+   "plant",
+   "word",
+   "computer",
+   "science"
+  ],
+  "lang": "en",
+  "updated": 1791127957.5411115,
+  "meanings": [
+   "영어",
+   "식물",
+   "단어",
+   "컴퓨터",
+   "과학"
+  ]
+ },
+ {
   "id": "425ffa92",
-  "title": "Unit 07-2",
+  "title": "Unit 06-8",
   "sentences": [
    "bag",
    "locker",
@@ -292,13 +374,73 @@
    "hello"
   ],
   "lang": "en",
-  "updated": 1790481270.523434,
+  "updated": 1791127957.4914885,
   "meanings": [
    "가방",
    "사물함",
    "선생님",
    "말하다",
    "안녕"
+  ]
+ },
+ {
+  "id": "9bb4316f",
+  "title": "Unit 06-10",
+  "sentences": [
+   "problem",
+   "math",
+   "code",
+   "interesting",
+   "boring"
+  ],
+  "lang": "en",
+  "updated": 1791127957.5547168,
+  "meanings": [
+   "문제",
+   "수학",
+   "암호",
+   "흥미로운",
+   "지루한"
+  ]
+ },
+ {
+  "id": "61244fdb",
+  "title": "Unit 06-12",
+  "sentences": [
+   "can't",
+   "monkey",
+   "large",
+   "climb",
+   "eagle"
+  ],
+  "lang": "en",
+  "updated": 1791127957.5707903,
+  "meanings": [
+   "할 수 없다 (cannot 줄임말)",
+   "원숭이",
+   "거대한",
+   "오르다",
+   "독수리"
+  ]
+ },
+ {
+  "id": "99681e2b",
+  "title": "Unit 06-15",
+  "sentences": [
+   "quickly",
+   "they",
+   "favorite",
+   "cheetah",
+   "elephant"
+  ],
+  "lang": "en",
+  "updated": 1791127957.5860212,
+  "meanings": [
+   "빠르게",
+   "그들",
+   "가장 좋아하는",
+   "치타",
+   "코끼리"
   ]
  }
 ]

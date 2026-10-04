@@ -161,7 +161,7 @@
         <li class="set-item" data-id="${s.id}">
           <div class="set-main">
             <div class="set-title">${esc(s.title)}<small>${s.sentences.length}${lang === "en" ? "단어" : "문장"}</small></div>
-            <div class="set-preview">${esc(s.sentences.join(", "))}</div>
+            <div class="set-preview">${esc(s.sentences[0] || "")}</div>
           </div>
           <div class="set-actions">
             <button class="icon-btn" data-act="edit" aria-label="고치기"><svg><use href="#i-pencil"/></svg></button>
